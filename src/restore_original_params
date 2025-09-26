@@ -1,0 +1,8 @@
+#!/usr/bin/python3
+
+import sys
+from industrial_scene_optimizer.restore_original_params import restore_original_parameters
+
+if __name__ == "__main__":
+    exit_code = restore_original_parameters()
+    sys.exit(exit_code)
