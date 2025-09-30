@@ -1,0 +1,23 @@
+[Unit]
+Description=Industrial Scene Optimizer Service
+After=network.target
+Documentation=https://gitee.com/openeuler/industrial-scene-optimizer
+
+[Service]
+Type=simple
+User=root
+Group=root
+WorkingDirectory=/etc/industrial-scene-optimizer
+ExecStart=/usr/sbin/industrial-scene-optimizer
+Restart=no
+RestartSec=5s
+# 避免日志重复记录到/var/log/messages
+StandardOutput=null
+StandardError=null
+
+# 环境变量设置
+Environment=PYTHONPATH=/usr/lib/python3*/site-packages
+Environment=SERVICE_CONFIG_PATH=/etc/industrial-scene-optimizer/service_config.conf
+
+[Install]
+WantedBy=multi-user.target

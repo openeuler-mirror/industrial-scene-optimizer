@@ -1,0 +1,23 @@
+# HPC计算密集型场景调优参数（基于分析调整后）
+sysctl:
+  # 进程调度优化
+  kernel.sched_autogroup_enabled: 1                  # 开启自动进程组调度（适合批量计算任务）
+  kernel.numa_balancing: 0                           # 关闭NUMA平衡（需配合numactl绑定CPU与本地内存）
+  kernel.sched_migration_cost_ns: 1000000            # 进程迁移成本调整为1毫秒（减少切换，保持缓存热度）
+  kernel.threads-max: 512                            # 最大线程数（按CPU逻辑核心数2倍设置，如256核节点）
+  
+  # 内存管理优化
+  vm.dirty_ratio: 10                                 # 脏页比例（减少I/O阻塞）
+  vm.dirty_background_ratio: 5                       # 后台刷脏page background刷盘阈值（配合dirty_ratio使用）
+  vm.swappiness: 5                                   # 最小化内存交换（避免计算内存被换出）
+  vm.zone_reclaim_mode: 1                            # 内存回收page回收策略（优先回收本地节点内存）
+
+# I/O调度优化
+io_scheduler: "noop"                                # 无操作调度器（减少I/O对计算的干扰）
+
+# CPU调度与性能优化
+cpu_scheduler: "CFS"                                # 完全公平调度器（适配多数并行计算任务）
+cpu_governor: "performance"                         # CPU性能模式（关闭节能，保持频率稳定）
+
+# 内存分配策略（需结合任务启动方式）
+memory_policy: "local"                              # 优先使用CPU本地NUMA节点内存（减少远程访问延迟）

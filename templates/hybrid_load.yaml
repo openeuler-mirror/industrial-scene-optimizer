@@ -1,0 +1,44 @@
+# HPC混合负载场景调优参数（平衡计算与数据处理需求）
+sysctl:
+  # 进程调度优化（兼顾计算稳定性与I/O响应）
+  kernel.sched_autogroup_enabled: 1                  # 保留自动分组（区分计算/IO任务优先级）
+  kernel.numa_balancing: 1                           # 开启NUMA平衡（动态适配混合任务内存分布）
+  kernel.sched_migration_cost_ns: 300000             # 迁移成本300微秒（平衡缓存保持与负载均衡）
+  kernel.sched_child_runs_first: 0                   # 子进程不优先运行（避免短任务抢占计算资源）
+  kernel.threads-max: 1024                           # 线程上限适中（平衡并发与切换开销）
+  
+  # 内存管理优化（兼顾计算内存与缓存效率）
+  vm.dirty_ratio: 25                                 # 脏页比例折中（减少I/O阻塞同时保留缓存）
+  vm.dirty_background_ratio: 15                      # 后台刷盘阈值（提前触发避免突发I/O）
+  vm.dirty_expire_centisecs: 1500                    # 脏页过期15秒（平衡聚合写入与延迟）
+  vm.swappiness: 10                                  # 适度交换（优先保护计算内存，保留部分缓存）
+  vm.zone_reclaim_mode: 0                            # 关闭本地内存回收（允许跨节点内存分配）
+  vm.max_map_count: 131072                           # 内存映射上限适中（满足中等规模文件访问）
+
+# I/O调度优化（混合场景均衡策略）
+io_scheduler: "bfq"                                  # 预算公平队列调度器（按任务类型分配I/O资源）
+read_ahead_kb: 512                                   # 预读512KB（平衡连续读取与内存占用）
+
+# CPU与性能优化（兼顾计算稳定性与任务响应）
+cpu_scheduler: "CFS"                                # 保留CFS调度（支持多类型任务公平分配）
+cpu_governor: "schedutil"                           # 调度感知性能模式（根据负载动态调节频率）
+
+# 网络优化（适配混合场景数据交互）
+net:
+  core:
+    rmem_default: 8388608                            # 接收缓冲区8MB
+    wmem_default: 8388608                            # 发送缓冲区8MB
+    rmem_max: 33554432                               # 最大接收缓冲区32MB
+    wmem_max: 33554432                               # 最大发送缓冲区32MB
+  ipv4:
+    tcp_window_scaling: 1                            # 启用窗口缩放
+    tcp_slow_start_after_idle: 1                      # 空闲后慢启动（平衡长连接与资源占用）
+
+# 资源隔离补充配置（关键优化）
+cgroups:
+  cpu_quota:
+    compute_tasks: 70%                               # 计算任务CPU配额70%
+    io_tasks: 30%                                    # I/O任务CPU配额30%
+  memory_limit:
+    compute_tasks: 60%                               # 计算任务内存配额60%
+    io_tasks: 40%                                    # I/O任务内存配额40%

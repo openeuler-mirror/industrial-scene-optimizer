@@ -1,0 +1,41 @@
+# HPC轻负载场景调优参数（平衡资源利用率与能效）
+sysctl:
+  # 进程调度优化（侧重能效与响应速度）
+  kernel.sched_autogroup_enabled: 1                  # 开启自动分组（简化轻量任务调度）
+  kernel.numa_balancing: 0                           # 关闭NUMA平衡（轻负载无需跨节点调度）
+  kernel.sched_migration_cost_ns: 100000             # 降低迁移成本（100微秒，加速任务响应）
+  kernel.sched_min_granularity_ns: 1000000           # 减小调度粒度（1毫秒，提升交互响应）
+  kernel.threads-max: 512                            # 线程上限适中（避免资源闲置浪费）
+  
+  # 内存管理优化（侧重能效与低延迟）
+  vm.dirty_ratio: 20                                 # 适中脏页比例（平衡缓存与写延迟）
+  vm.dirty_background_ratio: 10                      # 后台刷盘阈值（及时处理避免累积）
+  vm.dirty_expire_centisecs: 500                     # 脏页过期5秒（轻量任务快速落盘）
+  vm.swappiness: 30                                  # 适度提高交换倾向（内存闲置时节省能耗）
+  vm.zone_reclaim_mode: 0                            # 关闭本地回收（允许灵活内存分配）
+
+# I/O调度优化（侧重响应速度）
+io_scheduler: "kyber"                               # 快速响应调度器（优化轻量I/O延迟）
+read_ahead_kb: 256                                  # 预读256KB（减少内存占用）
+
+# CPU与能效优化（侧重节能与响应）
+cpu_scheduler: "CFS"                                # 保留CFS调度
+cpu_governor: "powersave"                           # 节能模式（轻负载下降低功耗）
+cpu_idle:
+  max_cstate: 3                                     # 适度深度休眠（平衡节能与唤醒速度）
+
+# 网络优化（适配轻量数据交互）
+net:
+  core:
+    rmem_default: 4194304                            # 接收缓冲区4MB
+    wmem_default: 4194304                            # 发送缓冲区4MB
+    rmem_max: 16777216                               # 最大接收缓冲区16MB
+    wmem_max: 16777216                               # 最大发送缓冲区16MB
+  ipv4:
+    tcp_keepalive_time: 300                          # 缩短TCP保活时间（释放闲置连接）
+
+# 服务优化（关闭不必要后台进程）
+services:
+  disabled:
+    - atd                                           # 关闭定时任务服务（轻负载无需批量调度）
+    - auditd                                         # 关闭审计服务（减少资源占用）

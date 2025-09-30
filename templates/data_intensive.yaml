@@ -1,0 +1,35 @@
+# HPC数据密集型场景调优参数（优化I/O吞吐量与内存效率）
+sysctl:
+  # 进程调度优化
+  kernel.sched_autogroup_enabled: 0                  # 关闭自动进程组（避免I/O进程被低优先级计算任务拖累）
+  kernel.numa_balancing: 1                           # 开启NUMA平衡（自动优化跨节点数据访问）
+  kernel.sched_migration_cost_ns: 100000             # 降低进程迁移成本（50-100微秒，加速负载均衡）
+  kernel.threads-max: 2048                           # 提高线程上限（适配多I/O线程并发需求）
+  
+  # 内存管理优化
+  vm.dirty_ratio: 40                                 # 提高脏页比例（减少刷盘频率，提升写缓存效率）
+  vm.dirty_background_ratio: 20                      # 后台刷脏页阈值（提前触发，避免突发I/O阻塞）
+  vm.dirty_expire_centisecs: 3000                    # 脏页过期时间30秒（允许更多数据聚合写入）
+  vm.swappiness: 10                                  # 适度启用交换（内存紧张时优先保留文件缓存）
+  vm.max_map_count: 262144                           # 提高内存映射上限（适配大文件随机访问）
+  vm.page-cluster: 3                                 # 降低页面簇大小（减少swap操作的I/O开销）
+
+# I/O调度优化
+io_scheduler: "mq-deadline"                         # 多队列截止时间调度器（平衡吞吐量与延迟）
+read_ahead_kb: 1024                                 # 预读大小1MB（提升连续数据读取效率）
+
+# 存储优化
+filesystem:
+  mount_options: "noatime,nodiratime,discard"        # 禁用访问时间记录，启用TRIM（减少元数据I/O）
+  max_file_handles: 1048576                          # 提高文件句柄上限（支持大量并发文件访问）
+
+# 网络优化（数据密集型场景常伴随网络传输）
+net:
+  core:
+    rmem_default: 16777216                           # 默认接收缓冲区16MB
+    wmem_default: 16777216                           # 默认发送缓冲区16MB
+    rmem_max: 67108864                               # 最大接收缓冲区64MB
+    wmem_max: 67108864                               # 最大发送缓冲区64MB
+  ipv4:
+    tcp_window_scaling: 1                            # 启用TCP窗口缩放（提升大带宽场景吞吐量）
+    tcp_slow_start_after_idle: 0                      # 关闭空闲后的慢启动（保持长连接传输效率）
